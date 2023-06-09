@@ -1,19 +1,15 @@
-# chatbot.py
-
 import os
 import requests
 import json
-#import openai
-from flask import Flask, request, jsonify
 import numpy as np
+from flask import Flask, request, jsonify
 from sentence_transformers import SentenceTransformer
+from requests.exceptions import Timeout, ConnectionError, TooManyRedirects, HTTPError
+from retry import retry
 
-#OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 QUERY_ENDPOINT = os.getenv("QUERY_ENDPOINT")
-
 HEADERS = {"Content-Type": "application/json"}
-
-#openai.api_key = OPENAI_API_KEY
+TIMEOUT = 5  # Set a timeout (seconds) for your requests
 
 app = Flask(__name__)
 
@@ -23,6 +19,7 @@ class Chatbot:
         self.headers = headers
         self.model = SentenceTransformer('paraphrase-distilroberta-base-v2')
 
+    @retry((Timeout, ConnectionError, TooManyRedirects, HTTPError), tries=3, delay=2, backoff=2)
     def send_query(self, query, top_k=3, filter=None):
         data = {
             "queries": [
@@ -35,10 +32,22 @@ class Chatbot:
         if filter:
             data["queries"][0]["filter"] = filter
 
-        response = requests.post(self.endpoint, headers=self.headers, data=json.dumps(data))
+        try:
+            response = requests.post(self.endpoint, headers=self.headers, data=json.dumps(data), timeout=TIMEOUT)
+            response.raise_for_status()  # Raise exception if the request returned an HTTP error status
 
-        if response.status_code != 200:
-            raise ValueError(f"Failed to query the endpoint. Status code: {response.status_code}")
+        except Timeout:
+            print("The request timed out.")
+            return None
+        except ConnectionError:
+            print("There was a network problem (e.g., DNS resolution, TCP connection attempt failed).")
+            return None
+        except TooManyRedirects:
+            print("The request exceeded the configured number of maximum redirections.")
+            return None
+        except HTTPError as http_err:
+            print(f"HTTP error occurred: {http_err}")
+            return None
 
         return response.json()
 
@@ -66,15 +75,20 @@ class Chatbot:
 
 chatbot = Chatbot()
 
-@app.route("/query", methods=["POST"])
+@app.route("/prompt_generation", methods=["POST"])
 def query():
+    # Input validation
+    if not request.json or 'query' not in request.json:
+        return jsonify({"error": "Missing or invalid input."}), 400
+
     user_query = request.json.get("query")
 
     query_result = chatbot.send_query(user_query)
 
-    if chatbot.is_relevant(user_query, query_result):
-        enhanced_prompt = chatbot.generate_prompt(user_query, query_result)
-    else:
+    if query_result is None:
+        return jsonify({"error": "Failed to get a response from the endpoint."}), 503
+
+    if not chatbot.is_relevant(user_query, query_result):
         enhanced_prompt = (
             "You are a developer advocate personal assistant for Near Protocol. "
             "Your name is NearGPT and you are created by VISCA. "
@@ -82,7 +96,9 @@ def query():
             "Do not deviate from the Near Protocol.\n\n"
             f"User asked: {user_query}\n"
         )
-    print(enhanced_prompt)
+        return jsonify({"prompt": enhanced_prompt})
+
+    enhanced_prompt = chatbot.generate_prompt(user_query, query_result)
     return jsonify({"prompt": enhanced_prompt})
 
 if __name__ == "__main__":
