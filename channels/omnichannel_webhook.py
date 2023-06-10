@@ -6,11 +6,11 @@ import logging
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
-DEEPPAVLOV_API_URL = "https://4242-onchainengineer-vina-hepphrcg7sx.ws-us99.gitpod.io"
-CHATWOOT_API_TOKEN = os.getenv("CHATWOOT_API_TOKEN")
-CHATWOOT_ACCESS_TOKEN ="PM2mRAafchukkjaA3eHdCTyJ"
-CHATWOOT_ACCOUNT_ID ="2"
-CHATWOOT_BASE_URL ="https://hub.visca.ai"
+VISCA_ENGINE_API_URL = os.environ.get("VISCA_ENGINE_API_URL")
+VISCA_HUB_API_TOKEN = os.environ.get("VISCA_HUB_API_TOKEN")
+VISCA_HUB_ACCESS_TOKEN = os.environ.get("VISCA_HUB_ACCESS_TOKEN")
+VISCA_HUB_ACCOUNT_ID = os.environ.get("VISCA_HUB_ACCOUNT_ID")
+VISCA_HUB_BASE_URL = os.environ.get("VISCA_HUB_BASE_URL")
 
 
 @app.route("/webhook", methods=["POST"])
@@ -25,47 +25,47 @@ def webhook():
         user_message = data.get("content")
         conversation_id = data["conversation"]["id"]
 
-        # Pass the message to the DeepPavlov agent
+        # Pass the message to the Visca_Engine agent
         try:
-            agent_response = ask_deeppavlov(user_id, user_message)
+            agent_response = ask_visca_engine(user_id, user_message)
         except Exception as e:
-            logging.error(f"Error querying DeepPavlov: {e}")
+            logging.error(f"Error querying Visca_Engine: {e}")
             return jsonify({"error": "An internal error occurred"}), 500
 
-        # Send the agent's response back to Chatwoot
+        # Send the agent's response back to Visca_Hub
         try:
-            send_message_to_chatwoot(conversation_id, agent_response)
+            send_message_to_visca_hub(conversation_id, agent_response)
         except Exception as e:
-            logging.error(f"Error sending message to Chatwoot: {e}")
+            logging.error(f"Error sending message to Visca_Hub: {e}")
             return jsonify({"error": "An internal error occurred"}), 500
 
     return jsonify({}), 200
 
-def ask_deeppavlov(user_id, message):
+def ask_visca_engine(user_id, message):
     data = {
         "user_id": user_id,
         "payload": message
     }
 
     try:
-        response = requests.post(DEEPPAVLOV_API_URL, json=data)
+        response = requests.post(VISCA_ENGINE_API_URL, json=data)
         response.raise_for_status()
     except requests.RequestException as e:
-        logging.error(f"Request to DeepPavlov failed: {e}")
+        logging.error(f"Request to Visca_Engine failed: {e}")
         raise
 
     return response.json().get('response')
 
-def send_message_to_chatwoot(conversation_id, message_content):
-    url = f"{CHATWOOT_BASE_URL}/api/v1/accounts/{CHATWOOT_ACCOUNT_ID}/conversations/{conversation_id}/messages"
-    headers = {"Content-Type": "application/json", "api_access_token": CHATWOOT_ACCESS_TOKEN}
+def send_message_to_visca_hub(conversation_id, message_content):
+    url = f"{VISCA_HUB_BASE_URL}/api/v1/accounts/{VISCA_HUB_ACCOUNT_ID}/conversations/{conversation_id}/messages"
+    headers = {"Content-Type": "application/json", "api_access_token": VISCA_HUB_ACCESS_TOKEN}
     data = {"content": message_content, "private": False}
     
     try:
         response = requests.post(url, headers=headers, json=data)
         response.raise_for_status()
     except requests.RequestException as e:
-        logging.error(f"Request to Chatwoot failed: {e}")
+        logging.error(f"Request to Visca_Hub failed: {e}")
         raise
 
 if __name__ == "__main__":

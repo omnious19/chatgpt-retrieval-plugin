@@ -13,7 +13,7 @@ TIMEOUT = 5  # Set a timeout (seconds) for your requests
 
 app = Flask(__name__)
 
-class Chatbot:
+class PromptGenerator:
     def __init__(self, endpoint=QUERY_ENDPOINT, headers=HEADERS):
         self.endpoint = endpoint
         self.headers = headers
@@ -73,7 +73,7 @@ class Chatbot:
         avg_similarity = np.mean(similarities)
         return avg_similarity >= relevance_threshold
 
-chatbot = Chatbot()
+prompt_generator = PromptGenerator()
 
 @app.route("/prompt_generation", methods=["POST"])
 def query():
@@ -83,12 +83,12 @@ def query():
 
     user_query = request.json.get("query")
 
-    query_result = chatbot.send_query(user_query)
+    query_result = prompt_generator.send_query(user_query)
 
     if query_result is None:
         return jsonify({"error": "Failed to get a response from the endpoint."}), 503
 
-    if not chatbot.is_relevant(user_query, query_result):
+    if not prompt_generator.is_relevant(user_query, query_result):
         enhanced_prompt = (
             "You are a developer advocate personal assistant for Near Protocol. "
             "Your name is NearGPT and you are created by VISCA. "
@@ -98,7 +98,7 @@ def query():
         )
         return jsonify({"prompt": enhanced_prompt})
 
-    enhanced_prompt = chatbot.generate_prompt(user_query, query_result)
+    enhanced_prompt = prompt_generator.generate_prompt(user_query, query_result)
     return jsonify({"prompt": enhanced_prompt})
 
 if __name__ == "__main__":
