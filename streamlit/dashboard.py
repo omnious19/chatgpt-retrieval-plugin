@@ -43,6 +43,14 @@ selected_page_title = st.sidebar.radio(f"Go to {st.session_state.selected_catego
 if selected_page_title in CATEGORIES[selected_category]:
     st.session_state.selected_page = CATEGORIES[selected_category][selected_page_title]
 
+
+# Input for Bearer Token
+bearer_token = st.text_input("Enter your HTTP Bearer Token", type="password")
+headers = {
+    'Authorization': f'Bearer {bearer_token}',
+}
+
+
 # Page contents
 if st.session_state.selected_page == "page1":
     # Set app title
@@ -70,7 +78,7 @@ if st.session_state.selected_page == "page1":
         if st.button('Upsert Documents'):
             try:
                 documents = json.loads(documents_json)
-                response = requests.post(f'{base_url}/upsert', json=documents)
+                response = requests.post(f'{base_url}/upsert', headers=headers, json=documents)
                 st.success("Documents successfully upserted")
                 st.json(response.json())
             except Exception as e:
@@ -86,7 +94,7 @@ if st.session_state.selected_page == "page1":
                 files = {
                     'file': (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)
                 }
-                response = requests.post(f'{base_url}/upsert-file', files=files)
+                response = requests.post(f'{base_url}/upsert-file', headers=headers, files=files)
                 st.success("File successfully upserted")
                 st.json(response.json())
             except Exception as e:
@@ -100,7 +108,7 @@ if st.session_state.selected_page == "page1":
         if st.button('Query Database'):
             try:
                 query = json.loads(query_json)
-                response = requests.post(f'{base_url}/query', json=query)
+                response = requests.post(f'{base_url}/query', headers=headers, json=query)
                 st.success("Query executed successfully")
                 st.json(response.json())
             except Exception as e:
@@ -114,7 +122,7 @@ if st.session_state.selected_page == "page1":
         if st.button('Delete Documents'):
             try:
                 delete_request = json.loads(delete_json)
-                response = requests.delete(f'{base_url}/delete', json=delete_request)
+                response = requests.delete(f'{base_url}/delete', headers=headers, json=delete_request)
                 st.success("Documents deleted successfully")
                 st.json(response.json())
             except Exception as e:
