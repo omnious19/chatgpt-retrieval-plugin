@@ -8,7 +8,7 @@ from requests.exceptions import Timeout, ConnectionError, TooManyRedirects, HTTP
 from retry import retry
 
 QUERY_ENDPOINT = os.getenv("QUERY_ENDPOINT")
-BEARER_TOKEN = "generativeAI"
+BEARER_TOKEN = os.getenv("BEARER_TOKEN")
 HEADERS = {"Content-Type": "application/json", "Authorization": f"Bearer {BEARER_TOKEN}"}
 TIMEOUT = 5  # Set a timeout (seconds) for your requests
 
