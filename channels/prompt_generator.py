@@ -8,7 +8,8 @@ from requests.exceptions import Timeout, ConnectionError, TooManyRedirects, HTTP
 from retry import retry
 
 QUERY_ENDPOINT = os.getenv("QUERY_ENDPOINT")
-HEADERS = {"Content-Type": "application/json"}
+BEARER_TOKEN = "generativeAI"
+HEADERS = {"Content-Type": "application/json", "Authorization": f"Bearer {BEARER_TOKEN}"}
 TIMEOUT = 5  # Set a timeout (seconds) for your requests
 
 app = Flask(__name__)
