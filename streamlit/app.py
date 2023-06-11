@@ -6,28 +6,29 @@ import json
 base_url = 'http://localhost:8000'  # Replace with your FastAPI app URL
 
 # Set app title
-st.title('NearGPT Plugin Interface')
+st.title('NearGPT Knowledge Base Interface')
 
 # Add a dropdown to select endpoints
 option = st.selectbox(
     'Select the endpoint',
-    ('Upsert Documents', 'Upsert File', 'Query Database', 'Delete Documents'))
+    ('Upsert File', 'Upsert Documents', 'Query Database', 'Delete Documents'))
 
-# Display help text in a sidebar
-with st.sidebar:
-    st.header("Instructions")
-    st.write("""
-    1. **Upsert Documents**: Input your documents in JSON format.
-    2. **Upsert File**: Choose a file to upload.
-    3. **Query Database**: Input your query in JSON format.
-    4. **Delete Documents**: Input your delete request in JSON format.
-    """)
+# Add help section
+show_help = st.checkbox("Show Help")
+if show_help:
+    with st.expander("Help"):
+        st.write("""
+        1. **Upsert Documents**: Insert or update documents in the database. Input your documents in JSON format.
+        2. **Upsert File**: Insert or update documents in the database from a file. Choose a file to upload.
+        3. **Query Database**: Retrieve data from the database. Input your query in JSON format.
+        4. **Delete Documents**: Remove documents from the database. Input your delete request in JSON format.
+        """)
 
 # Handle different endpoints based on user's selection
 if option == 'Upsert Documents':
-    st.subheader('Upsert Documents')
+    st.subheader('Insert or Update Documents')
 
-    documents_json = st.text_area('Enter your documents in JSON format', height=200)
+    documents_json = st.text_area('Enter your documents in JSON format', height=200, value='{ "doc1": { "field1": "value1" } }')
 
     if st.button('Upsert Documents'):
         try:
@@ -39,7 +40,7 @@ if option == 'Upsert Documents':
             st.error(str(e))
 
 elif option == 'Upsert File':
-    st.subheader('Upsert File')
+    st.subheader('Insert or Update Documents From File')
 
     uploaded_file = st.file_uploader('Choose a file')
 
@@ -55,9 +56,9 @@ elif option == 'Upsert File':
             st.error(str(e))
 
 elif option == 'Query Database':
-    st.subheader('Query Database')
+    st.subheader('Retrieve Data From Database')
 
-    query_json = st.text_area('Enter your query in JSON format', height=200)
+    query_json = st.text_area('Enter your query in JSON format', height=200, value='{ "field1": "value1" }')
 
     if st.button('Query Database'):
         try:
@@ -69,9 +70,9 @@ elif option == 'Query Database':
             st.error(str(e))
 
 elif option == 'Delete Documents':
-    st.subheader('Delete Documents')
+    st.subheader('Remove Documents From Database')
 
-    delete_json = st.text_area('Enter your delete request in JSON format', height=200)
+    delete_json = st.text_area('Enter your delete request in JSON format', height=200, value='{ "doc1": { "field1": "value1" } }')
 
     if st.button('Delete Documents'):
         try:

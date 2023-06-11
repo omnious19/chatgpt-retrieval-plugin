@@ -45,7 +45,6 @@ for plugin, details in plugins.items():
             st.write(details['description'])
             st.text(f"Category: {details['category']}")
             st.text(f"Version: {details['version']}")
-            
             st.text("Access Link:")
             st.code(details["acccess_link"])
             
